@@ -1,110 +1,37 @@
-Jste technický analytik. Rozdělte komentář na atomární tvrzení. Často je text ve slovenštině nebo češtině.
+Jsi asistent pro ověřování faktů. Rozlož tvrzení pouze do ověřitelných atomických faktů (jeden nápad na fakt: entita-vztah, událost, množství). Extrahuj přesné entity (jména, profese), role, časové údaje a vztahy přímo z textu tvrzení. Přeskoč a ignoruj všechny atomy vyjadřující osobní názory na osobní záležitosti (např. subjektivní hodnocení, pocity, preference bez ověřitelných důkazů). Zaměř se výhradně na objektivní, externě ověřitelné elementy identifikované v textu.
 
+Přemýšlej krok za krokem pro každý atomický fakt a poté ho vypíš. Pokračuj, dokud není tvrzení plně pokryto objektivními fakty z textu (žádné chybějící entity, vztahy, časové osy nebo implikace; žádné názory).
 
-Zachovejte záměr a formulace autora v maximální možné míře: nepřidávejte nová fakta ani nevyvozujte nevyřčená tvrzení. Vaším úkolem je POUZE oddělit a minimálně normalizovat jednotky tvrzení.
+TVRZENÍ: ...
 
+Formátuj PŘESNĚ takto, žádný jiný text:
 
-### PŘÍKLADY
+UVAŽOVÁNÍ: ...
+ATOM: ...
 
-Vstup: "Všichni nadávají na Rusko ale všichni od něj berou levný plyn"
-Výstup (Tvrzení): "Mnoho zemí nakupuje od Ruska levný plyn"
+UVAŽOVÁNÍ: ...
+END
 
-Vstup: "Bratia Cesi, ktore noviny su to u vas?\nU nas je to DennikN, ktore vlastni ESSET a ten je pod kontrolou CIA. Potom noviny SME, kde je vlastnikom Soros."
-Výstup (Tvrzení): 
-- "CIA má pod kontrolov ESET."
-- "Noviny SME vlastni  Soros."
-- "DennikN vlastnil v roku 2023 ESET."
+---
 
+PŘÍKLAD
 
-### VSTUPY
-Komentář (Comment):
-[COMMENT]
+Tvrzení: "PyTorch dosáhl stavu-of-the-art výsledků na GLUE prostřednictvím BERT fine-tuningu v roce 2018 s průměrným skóre 85%. Miluji ho, protože je nejlepší."
+UVAŽOVÁNÍ: První fakt: stanov vazbu framework-entita a benchmark. (Přeskočeno: "Miluji ho, protože je nejlepší" - osobní názor.)
+ATOM: PyTorch je framework pro hluboké učení.
 
+UVAŽOVÁNÍ: Druhý: specifikuj architekturu modelu použitou.
+ATOM: Model BERT byl fine-tunován pomocí PyTorchu.
 
-OčekávanýPočetTvrzení (ExpectedClaims - celé číslo):
-[N]
+UVAŽOVÁNÍ: Třetí: identifikuj benchmark a časovou osu.
+ATOM: Testování na benchmarku GLUE proběhlo v roce 2018.
 
+UVAŽOVÁNÍ: Čtvrtý: kvantifikuj metriku výkonu.
+ATOM: Fine-tunovaný BERT na PyTorchu dosáhl 85% průměrného skóre na GLUE.
 
-### DEFINICE
-Atomární tvrzení (Atomic claim) = jedna propozice, kterou lze vyhodnotit jako pravdivou/nepravdivou (včetně názorů vyjádřených jako propozice).
-Ne-tvrzení (Non-claim) = čisté otázky, pozdravy nebo metatext („viz výše“ atd.).
+UVAŽOVÁNÍ: Framework, model, benchmark, časová osa a metrika plně pokryty; názory přeskočeny.
+END
 
+---
 
-### KROKY
-
-
-Krok 1 – Extrakce kandidátních tvrzení (zatím ignorujte OčekávanýPočetTvrzení)
-- Seznamte všechny propozice v Komentáři.
-- Rozdělte souvětí na více tvrzení, pokud zjevně obsahují více propozic (A a B; příčina–následek; srovnání + závěr).
-- Udržujte formulace blízké originálu; provádějte pouze minimální úpravy, aby každé tvrzení bylo gramaticky správné.
-- NEROZPOUŠTĚJTE zájmena ani nepřidávejte chybějící kontext; ponechte „to/tento/oni“ atd. v původní podobě.
-- Také samostatně sesbírejte položky typu Ne-tvrzení.
-
-
-Krok 2 – Přizpůsobení OčekávanémuPočtuTvrzení s minimálními změnami
-Pokud počet_kandidátních_tvrzení > OčekávanýPočetTvrzení:
-- Slučujte pouze úzce související sousední tvrzení (stejný subjekt/událost/čas) jednoduchým spojením (čárka/„a“), bez přidávání obsahu.
-- Neslučujte tvrzení o různých entitách, časech nebo důkazech.
-
-
-Pokud počet_kandidátních_tvrzení < OčekávanýPočetTvrzení:
-- Rozdělujte pouze tehdy, pokud tvrzení zjevně obsahuje více propozic (spojky, srovnání, více entit nebo metrik).
-- Nevymýšlejte nová tvrzení ani nepřirozené fragmenty.
-
-
-Pokud nemůžete dosáhnout přesně OčekávanéhoPočtuTvrzení bez vymýšlení obsahu nebo vytváření špatných fragmentů:
-- Zůstaňte co nejblíže OčekávanémuPočtuTvrzení a explicitně uveďte, proč je přesná shoda nemožná.
-
-
-Krok 3 – Označení každého finálního tvrzení pro následnou dekontextualizaci
-U každého finálního tvrzení uveďte:
-- Typ (Type): jeden z {Fact, Interpretation, Opinion, Recommendation, Prediction}.
-- Příznaky (Flags): libovolné z
-  - PronounWithoutAntecedent (Zájmeno bez antecedentu)
-  - ImplicitEntity (Implicitní entita – např. „model“, „článek“)
-  - TimeDependent (Časově závislé – např. „nedávno“, „nyní“)
-  - Referential (Referenční – např. „výše“, „tato sekce“)
-  - MetricOrThresholdMissing (Chybějící metrika nebo práh – např. „významný“, „lepší“ bez komparátoru)
-- TermínyPravděpodobněVyžadujícíPozdějšíNahrazení (TermsLikelyNeedingReplacementLater): krátké úseky zkopírované z tvrzení, které budou pravděpodobně vyžadovat pozdější explicitní pojmenování (nepřepisujte je).
-
-
-Krok 4 – Kontrola pokrytí
-- Zajistěte, aby každá smysluplná propozice v Komentáři byla zastoupena právě v jednom tvrzení nebo položce Ne-tvrzení.
-- Pokud neexistují žádná tvrzení, uveďte to a vraťte prázdný seznam tvrzení.
-
-
-### FORMÁT VÝSTUPU
-ExpectedClaims: <N>
-FinalClaimCount: <K>
-
-
-CandidateClaims:
-1) "<text>"
-2) ...
-
-
-NonClaimItems:
-1) "<text>"
-2) ...
-
-
-ReconciliationNotes:
-- "<stručný popis sloučení/rozdělení a případně důvod, proč bylo přesné N nemožné>"
-
-
-FinalClaims:
-1) Text: "<tvrzení>"
-   Type: <...>
-   Flags: [ ... ]
-   TermsLikelyNeedingReplacementLater: ["...", ...]
-2) Text: "<tvrzení>"
-   Type: <...>
-   Flags: [ ... ]
-   TermsLikelyNeedingReplacementLater: ["...", ...]
-...
-
-
-Pokud nebylo možné dosáhnout přesného OčekávanéhoPočtuTvrzení:
-ExactMatchPossible: false
-Reason: "<krátké vysvětlení, proč by dosažení přesně N vyžadovalo vymýšlení obsahu nebo vytvoření nepřirozených fragmentů>"
-ClosestFeasibleClaimCount: <K>
+TVRZENÍ: [TVRZENÍ]

@@ -51,16 +51,28 @@ def send_prompt_to_openai(prompt):
 
 def decontextualize(article, message):
     input = DECONTEXT.replace("[ARTICLE]", article).replace("[MESSAGE]", message)
-    return send_prompt_to_openai(input)
+    response = send_prompt_to_openai(input)
+    output = response.output_text.split("UVAŽOVÁNÍ: ")[-1]
+    reasoning, d = output.split("DEKONTEX: ")
+    return d, reasoning, response.output_text
 
 
-def atomize(article, message, expected_claims: int):
-    input = (
-        CLAIM_SEP.replace("[ARTICLE]", article)
-        .replace("[COMMENT]", message)
-        .replace("[N]", str(expected_claims))
-    )
-    return send_prompt_to_openai(input)
+def atomize(message, expected_claims: int):
+    input = CLAIM_SEP.replace("[TVRZENÍ]", message)
+    output = send_prompt_to_openai(input).output_text
+    lines = output.splitlines()
+    atoms = []
+    reasonings = []
+    for line in lines:
+        if line.startswith("ATOM: "):
+            atom = line.split(": ", 1)[-1]
+            atoms.append(atom)
+        elif line.startswith("UVAŽOVÁNÍ: "):
+            reasoning = line.split(": ", 1)[-1]
+            reasonings.append(reasoning)
+    
+    return atoms, reasonings
+
 
 
 def print_readable(text):
@@ -73,23 +85,37 @@ def decontextualize_then_atomize(article, comment, expected_claims: int):
         print("WARN: No article provided, using placeholder.")
         article = "<No article provided, return the message as is.>"
 
-    doutput = decontextualize(article, comment)
-    d = doutput.output_text.split("\n")[-1]
+    d, reasoning, doutput = decontextualize(article, comment)
+
     print_readable(d)
+    aoutput = atomize(d, expected_claims)
 
-    aoutput = atomize(doutput.output_text, d, expected_claims)
-
-    return d, doutput, aoutput
+    return d, reasoning, doutput, aoutput
 
 
 if __name__ == "__main__":
-    idx = 4
-    d, doutput, aoutput = decontextualize_then_atomize(
-        data[idx]["news_text"],
-        data[idx]["source"],
-        len(data[idx]["claims"]),
-    )
+    idx = 5
+    article = data[idx]["news_text"]
+    comment = data[idx]["source"]
+    expected_claims = len(data[idx]["claims"])
 
-    print(aoutput.output_text)
+    atoms, reasonings = atomize(comment, expected_claims)
+    for a, z in zip(atoms, reasonings):
+        print("ATOM: ", a)
+        print("ATOM_REASONING: ", z)
 
-    print_readable(data[4]["source"])
+        d, reasoning, doutput = decontextualize(article, a)
+        print("DECONT: ", d)
+        print("DECONT_REASONING: ", reasoning)
+        print()
+
+
+    # d, reasoning, doutput, aoutput = decontextualize_then_atomize(
+    #     article,
+    #     comment,
+    #     expected_claims,
+    # )
+
+    # print(aoutput.output_text)
+
+    # print_readable(data[4]["source"])
