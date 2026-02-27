@@ -85,7 +85,9 @@ def main() -> None:
         if args.task == "task1":
             example["checkworthy_prediction"] = run_task1(example)
         else:
-            example["claims_prediction"] = run_task2(example)
+            # Skip claim extraction for non-checkworthy claims
+            if example['checkworthy']:
+                example["claims_prediction"] = run_task2(example)
 
     # Add team-token & save data
     payload["team_token"] = team_token
