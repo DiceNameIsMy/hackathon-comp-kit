@@ -11,10 +11,10 @@ load_dotenv()
 
 # Constants
 DATA_PATH = "dev_checkworthy.json"
-ATOMIZE_PROMPT_PATH = "atomize.md"
-DECONTEXT_PROMPT_PATH = "decontext.md"
-KEYWORDS_PROMPT_PATH = "decontext_keywords.md"
-JUDGE_PROMPT_PATH = "judge.md"
+ATOMIZE_PROMPT_PATH = "prompts/atomize.md"
+DECONTEXT_PROMPT_PATH = "prompts/decontext.md"
+KEYWORDS_PROMPT_PATH = "prompts/decontext_keywords.md"
+JUDGE_PROMPT_PATH = "prompts/judge.md"
 EXPERIMENTAL_MIN_LENGTH = 1000
 
 

@@ -7,9 +7,10 @@ KONTEXT: ...
 CÍL: ...
 
 Přemýšlej krok za krokem:
-1. Identifikuj nejasnosti (zájmena, implicitní reference, neurčené entity/události).
-2. Pro každou vyber pouze minimální informace z KONEXTU k vyřešení.
-3. Naplánuj přepsání: integruj řešení přirozeně, drž se původní délky/stylu.
+1. Identifikuj nejasnosti (zájmena, implicitní reference) a relativní údaje (čas "dnes/vloni", místo "zde/u nás", přítomný čas sloves).
+2. Pro každou nejasnost vyhledej v KONTEXTU (datum článku, lokalita) přesné ukotvení (např. "dnes" -> "v lednu 2024"). Pokud CÍL obsahuje "v tomto roce" nebo jen obecný rok, doplň konkrétní rok z KONTEXTU, pokud je znám.
+3. DŮLEŽITÉ: Nikdy si nedomýšlej aktéry (např. kdo jsou "babráci"), kteří nejsou výslovně zmíněni v KONTEXTU. Pokud KONTEXT neobsahuje odpověď, zachovej původní obecný výraz nebo zájmeno. Informace čerpej VÝHRADNĚ z [ARTICLE].
+4. Naplánuj přepsání: integruj řešení přirozeně, drž se původní délky/stylu. Zachovej všechna existující data.
 
 Vypiš POUZE tyto řádky:
 UVAŽOVÁNÍ: [uvažování]
