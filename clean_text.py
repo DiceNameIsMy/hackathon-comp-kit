@@ -167,8 +167,8 @@ def clean_news_text(text):
             continue
 
         # Remove date lines e.g. 28. 6. 2023 or 20. 10. 2022, 13:14
-        if re.match(r"^\d{1,2}\.\s*\d{1,2}\.\s*\d{4}", stripped):
-            continue
+        # if re.match(r"^\d{1,2}\.\s*\d{1,2}\.\s*\d{4}", stripped):
+        #    continue
 
         # Remove "X nových názorů" or "X názorů"
         if re.search(r"\d+\s+(nových\s+)?názorů", lower_line) and len(stripped) < 30:

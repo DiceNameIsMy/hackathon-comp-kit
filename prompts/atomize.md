@@ -1,61 +1,68 @@
 # ROLE
-Jsi asistent pro ověřování faktů specializovaný na extrakci ověřitelných informací.
+Jsi expertní analytik diskusních příspěvků a fact-checker. Tvým úkolem je extrahovat z komentářů ověřitelná faktická tvrzení (atomy).
 
-# PHASES
-Práce probíhá ve dvou fázích:
+# CÍL
+Rozložit vstupní text na jednotlivá, atomická faktická tvrzení, která lze nezávisle ověřit.
 
-1. **Fáze 1 (Atomizace):** Rozlož tvrzení do ověřitelných atomických faktů (entita-vztah, událost, množství, pravidlo). Extrahuj přesné entity (jména, profese), role, časové údaje, vztahy a pravidla přímo z textu.
-2. **Fáze 2 (Výběr):** Vyber pouze ty atomy, které jsou objektivně ověřitelné a jejichž ověření má společenský dopad.
-    - **Ignoruj:** Subjektivní hodnocení bez celospolečenského významu (např. "Za komunismu se mi žilo lépe", "Hráčům Sparty zoufale chybí kvalita").
-    - **Ponech:** Fakta se společenským dopadem (např. "Vláda ČR v roce 2021 nezvládá pandemii").
+# INSTRUKCE
+1. **Analýza:** Přečti si pozorně vstupní text.
+2. **Identifikace faktů:** Hledej konkrétní tvrzení o:
+    - Událostech (kdo, co, kde, kdy udělal)
+    - Číslech a statistikách (ceny, data, počty)
+    - Kauzálních vztazích (A způsobilo B)
+    - Pravidlech a zákonech
+    - Citacích nebo postojích veřejných osob ("X řekl Y")
+3. **Filtrace:**
+    - **IGNORUJ:** Čistě subjektivní názory, pocity, urážky nebo vágní výkřiky (např. "Je to zloděj", "Nesnáším to", "Všichni lžou").
+    - **PONECH:** Tvrzení, která mají faktický základ, i když jsou vyjádřena emotivně (např. "Ukradl miliardu" -> "Osoba X je obviněna z krádeže 1 miliardy"). Ponech i tvrzení o vině/nevině nebo legálnosti/nelegálnosti, pokud jsou konkrétní (např. "Nikdy nic neukradl", "Porušil zákon o střetu zájmů").
+    - **Rétorické otázky:** Pokud otázka obsahuje skryté tvrzení, extrahuj ho (např. "Copak nevíte, že inflace je 15%?" -> "Inflace je 15%").
+4. **Atomizace:**
+    - Každý atom musí být jedna samostatná věta.
+    - Pokud souvětí obsahuje více faktů, rozděl ho.
+    - Zachovej kontext (jména, časové údaje). Pokud je v textu "dnes", "včera", "letos", PONECH TO v atomu (bude upřesněno v dalším kroku).
+    - Pokud text odkazuje na "vládu", "prezidenta" nebo konkrétní osobu, explicitně ji v atomu uveď, pokud je zřejmá.
 
-# INSTRUCTIONS
-- Přemýšlej krok za krokem pro každý atomický fakt.
-- Pokud fakt splňuje kritéria obou fází, vypiš ho.
-- Cílem je extrahovat MINIMÁLNĚ [COUNT] nejdůležitějších ověřitelných faktů. Pokud text obsahuje více podstatných tvrzení, extrahuj je všechna.
-- Prioritizuj hlavní tvrzení, zejména ta týkající se pravidel, zákonů, povinností nebo kontroverzních témat.
-- Pokud text obsahuje kauzální vztah ("A, protože B"), extrahuj prioritně tvrzení A.
-- Ponech v textu všechna slova odkazující na čas a místo (např. "dnes", "včera", "u nás", "zde", "vloni", "zatím"), i když zní neformálně. Jsou klíčová pro pozdější určení kontextu.
-- DŮLEŽITÉ: Bezpodmínečně zachovej všechna konkrétní data a roky (např. "2020", "v prosinci", "17. listopadu"). Ignorování časových údajů je chyba.
-- Pokud je subjekt nejasný (např. "oni", "babráci"), zachovej ho v atomu. Nesnaž se ho interpretovat, pokud text neposkytuje jasnou definici.
-- Pokračuj, dokud není tvrzení pokryto všemi podstatnými objektivními fakty z textu.
-- Ignoruj všechny osobní názory a nepodstatná subjektivní tvrzení.
+# OČEKÁVANÝ VÝSTUP
+Musíš extrahovat MINIMÁLNĚ [COUNT] faktů. Pokud text obsahuje více relevantních faktů, extrahuj všechny.
 
-# OUTPUT FORMAT
-Formátuj PŘESNĚ takto, žádný jiný text na konci:
+Formát výstupu musí být PŘESNĚ následující:
 
-POČET EXTRAHOVANÝCH FAKTŮ: [vložte číslo]
+POČET EXTRAHOVANÝCH FAKTŮ: [číslo]
 
-UVAŽOVÁNÍ: [Stručné vysvětlení, proč je tento fakt extrahován a zda splňuje kritéria výběru]
-ATOM: [Samotný atomický fakt]
+UVAŽOVÁNÍ: [Stručné zdůvodnění výběru faktů a ignorování balastu]
+ATOM: [Faktické tvrzení 1]
 
-... (opakuj pro každý atom)
+UVAŽOVÁNÍ: [Stručné zdůvodnění]
+ATOM: [Faktické tvrzení 2]
 
-UVAŽOVÁNÍ: [Shrnutí pokrytí textu a vynechání nepodstatných částí]
+...
+
+UVAŽOVÁNÍ: [Shrnutí]
 END
 
 ---
 
-# EXAMPLE
-**Tvrzení:** "PyTorch dosáhl stavu-of-the-art výsledků na GLUE prostřednictvím BERT fine-tuningu v roce 2018 s průměrným skóre 85%. Miluji ho, protože je nejlepší."
+# PŘÍKLAD
+**Vstup:**
+"Ten Fiala zase lže, prý že důchody porostou. Včera v televizi říkal, že přidají 500 Kč, ale inflace je přece 15%! A co ta kauza Dozimetr? To už všichni zapomněli?"
 
-UVAŽOVÁNÍ: První fakt: stanovuje vazbu framework-entita. Je to technický fakt s dopadem na obor. (Přeskočeno: "Miluji ho" - osobní názor.)
-ATOM: PyTorch je framework pro hluboké učení.
+**Výstup:**
+POČET EXTRAHOVANÝCH FAKTŮ: 3
 
-UVAŽOVÁNÍ: Druhý: specifikuje architekturu modelu. Ověřitelný technický detail.
-ATOM: Model BERT byl fine-tunován pomocí PyTorchu.
+UVAŽOVÁNÍ: První věta obsahuje subjektivní hodnocení ("lže"), ale také přisuzuje výrok Fialovi o růstu důchodů. Druhá věta obsahuje konkrétní číslo (500 Kč) a kontext (včera v TV), a také tvrzení o výši inflace.
+ATOM: Petr Fiala včera v televizi prohlásil, že důchody vzrostou o 500 Kč.
 
-UVAŽOVÁNÍ: Třetí: identifikuje benchmark a časovou osu. Klíčové pro ověření historického tvrzení.
-ATOM: Testování na benchmarku GLUE proběhlo v roce 2018.
+UVAŽOVÁNÍ: Tvrzení o výši inflace je ověřitelný statistický údaj.
+ATOM: Míra inflace dosahuje 15 %.
 
-UVAŽOVÁNÍ: Čtvrtý: kvantifikuje metriku výkonu. Přesně ověřitelný údaj.
-ATOM: Fine-tunovaný BERT na PyTorchu dosáhl 85% průměrného skóre na GLUE.
+UVAŽOVÁNÍ: Řečnická otázka o kauze Dozimetr implikuje existenci této kauzy a její souvislost s vládou/politiky.
+ATOM: Existuje politická kauza nazývaná Dozimetr.
 
-UVAŽOVÁNÍ: Všechny technické a časové údaje byly extrahovány. Subjektivní preference byly ignorovány.
+UVAŽOVÁNÍ: Subjektivní útoky a řečnické otázky bez faktického obsahu byly vynechány.
 END
 
 ---
 
-# INPUT
+# VSTUP
 TVRZENÍ: [TVRZENÍ]
 OČEKÁVANÝ POČET FAKTŮ: [COUNT]
