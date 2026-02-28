@@ -57,8 +57,10 @@ def send_prompt_to_openai(prompt):
     return response
 
 
-def atomize(message, atomize_template):
-    prompt = atomize_template.replace("[TVRZENÍ]", message)
+def atomize(message, atomize_template, expected_count):
+    prompt = atomize_template.replace("[TVRZENÍ]", message).replace(
+        "[COUNT]", str(expected_count)
+    )
     response = send_prompt_to_openai(prompt)
     output = response.output_text
     lines = output.splitlines()
@@ -101,7 +103,8 @@ def main():
         print(f"\n--- Sample {idx + 1} (ID: {sample.get('id', 'N/A')}) ---")
         print(f"Source: {comment[:100]}...")
 
-        atoms, atomize_raw = atomize(comment, atomize_template)
+        expected_count = len(sample.get("claims", []))
+        atoms, atomize_raw = atomize(comment, atomize_template, expected_count)
         decont_outputs = []
         decont_raw_outputs = []
 

@@ -12,11 +12,14 @@ Práce probíhá ve dvou fázích:
 # INSTRUCTIONS
 - Přemýšlej krok za krokem pro každý atomický fakt.
 - Pokud fakt splňuje kritéria obou fází, vypiš ho.
+- Cílem je extrahovat přibližně [COUNT] nejdůležitějších ověřitelných faktů.
 - Pokračuj, dokud není tvrzení pokryto všemi podstatnými objektivními fakty z textu.
 - Ignoruj všechny osobní názory a nepodstatná subjektivní tvrzení.
 
 # OUTPUT FORMAT
 Formátuj PŘESNĚ takto, žádný jiný text na konci:
+
+POČET EXTRAHOVANÝCH FAKTŮ: [vložte číslo]
 
 UVAŽOVÁNÍ: [Stručné vysvětlení, proč je tento fakt extrahován a zda splňuje kritéria výběru]
 ATOM: [Samotný atomický fakt]
@@ -50,3 +53,4 @@ END
 
 # INPUT
 TVRZENÍ: [TVRZENÍ]
+OČEKÁVANÝ POČET FAKTŮ: [COUNT]

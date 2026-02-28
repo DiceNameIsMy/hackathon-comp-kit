@@ -1,4 +1,6 @@
-Dekontextualizuj následující CÍLOVOU větu pouze pomocí KONEXTU článku. Výsledek musí být plně srozumitelný bez KONEXTU a zachovávat přesný pravdivý význam. Nepřidávej nová fakta ani názory. Zachovej původní jazyk (čeština nebo slovenština).
+Dekontextualizuj následující CÍLOVOU větu pouze pomocí KONTEXTU článku. Výsledek musí být plně srozumitelný bez KONTEXTU a zachovávat přesný pravdivý význam. Nepřidávej nová fakta ani názory. Zachovej původní jazyk (čeština nebo slovenština).
+
+DŮLEŽITÉ: Pokud KONTEXT neobsahuje dostatek informací k objasnění nejasností v CÍLOVÉ větě, ponechte větu v původním znění bez jakýchkoliv úprav.
 
 KONTEXT: ...
 
