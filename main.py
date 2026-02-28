@@ -3,8 +3,14 @@ import random
 import json
 import os
 import requests
+import re
 from dotenv import load_dotenv
 from openai import OpenAI
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich.text import Text
+from rich.markdown import Markdown
 from clean_text import clean_news_text
 
 load_dotenv()
@@ -16,6 +22,8 @@ DECONTEXT_PROMPT_PATH = "prompts/decontext.md"
 KEYWORDS_PROMPT_PATH = "prompts/decontext_keywords.md"
 JUDGE_PROMPT_PATH = "prompts/judge.md"
 EXPERIMENTAL_MIN_LENGTH = 1000
+
+console = Console()
 
 
 def load_data(file_path):
@@ -81,11 +89,28 @@ def get_model_response(prompt, model_name):
         return response.output_text
 
 
-def atomize(message, atomize_template, expected_count, model_name="openai"):
+def print_verbose_step(title, prompt, response):
+    console.print(f"[bold cyan]--- VERBOSE: {title} ---[/bold cyan]")
+    console.print("[dim]PROMPT:[/dim]")
+    console.print(Text(prompt, style="dim"))
+    console.print("[dim]RESPONSE:[/dim]")
+    console.print(Text(response, style="dim"))
+    console.print(
+        f"[bold cyan]-------------------------{'-' * len(title)}----[/bold cyan]\n"
+    )
+
+
+def atomize(
+    message, atomize_template, expected_count, model_name="openai", verbose=False
+):
     prompt = atomize_template.replace("[TVRZENÍ]", message).replace(
         "[COUNT]", str(expected_count)
     )
     output = get_model_response(prompt, model_name)
+
+    if verbose:
+        print_verbose_step("ATOMIZE", prompt, output)
+
     lines = output.splitlines()
     atoms = []
     for line in lines:
@@ -101,11 +126,18 @@ def decontextualize(
     keywords_template,
     experimental=False,
     model_name="openai",
+    verbose=False,
 ):
+    context_used = "Full Article"
     if experimental and len(article) > EXPERIMENTAL_MIN_LENGTH:
         # Step 1: Identify keywords
         keyword_prompt = keywords_template.replace("[MESSAGE]", atom)
         keywords_output = get_model_response(keyword_prompt, model_name)
+
+        if verbose:
+            print_verbose_step(
+                "KEYWORDS (Experimental)", keyword_prompt, keywords_output
+            )
 
         # Parse keywords (assuming comma-separated)
         keywords = [k.strip() for k in keywords_output.split(",")]
@@ -120,6 +152,7 @@ def decontextualize(
         # If filtering failed to find anything (e.g., keywords not found or empty), fallback to full article
         if filtered_sentences:
             context = ". ".join(filtered_sentences)
+            context_used = "Filtered Context"
         else:
             context = article
     else:
@@ -129,10 +162,13 @@ def decontextualize(
     prompt = decontext_template.replace("[ARTICLE]", context).replace("[MESSAGE]", atom)
     output = get_model_response(prompt, model_name)
 
+    if verbose:
+        print_verbose_step("DECONTEXTUALIZE", prompt, output)
+
     decont = output.strip()
     if "DEKONTEX: " in output:
         decont = output.split("DEKONTEX: ")[-1].strip()
-    return decont, output
+    return decont, output, context_used
 
 
 def judge_output(
@@ -142,6 +178,7 @@ def judge_output(
     expected_claims,
     judge_template,
     model_name="openai",
+    verbose=False,
 ):
     full_source = f"Tvrzení: {source_text}\n\nKontext: {article_context}"
     # Truncate context if too long? Not handling for now.
@@ -152,7 +189,28 @@ def judge_output(
     prompt = prompt.replace(
         "[EXPECTED]", "\n".join([f"- {c}" for c in expected_claims])
     )
-    return get_model_response(prompt, model_name)
+    output = get_model_response(prompt, model_name)
+
+    if verbose:
+        print_verbose_step("JUDGE", prompt, output)
+
+    return output
+
+
+def parse_judge_result(judge_text):
+    score = "N/A"
+    explanation = judge_text
+
+    # Simple regex to extract score and explanation if format matches
+    score_match = re.search(r"SKÓRE:\s*(\d+)", judge_text, re.IGNORECASE)
+    if score_match:
+        score = score_match.group(1)
+
+    expl_match = re.split(r"VYSVĚTLENÍ:\s*", judge_text, flags=re.IGNORECASE)
+    if len(expl_match) > 1:
+        explanation = expl_match[1].strip()
+
+    return score, explanation
 
 
 def main():
@@ -189,9 +247,19 @@ def main():
         action="store_true",
         help="Run LLM judge to assess the result",
     )
+    parser.add_argument(
+        "-verbose",
+        action="store_true",
+        help="Show detailed prompt inputs and raw outputs",
+    )
     args = parser.parse_args()
 
     data = load_data(args.file)
+    if not isinstance(data, list):
+        console.print(
+            "[bold red]Error: Input file must contain a list of samples (or 'data' key with a list).[/bold red]"
+        )
+        return
     atomize_template, decontext_template, keywords_template, judge_template = (
         load_prompts()
     )
@@ -201,7 +269,7 @@ def main():
         if sample:
             samples = [sample]
         else:
-            print(f"Sample with ID '{args.id}' not found.")
+            console.print(f"[bold red]Sample with ID '{args.id}' not found.[/bold red]")
             return
     else:
         samples = random.sample(data, min(args.count, len(data)))
@@ -214,45 +282,90 @@ def main():
         comment = sample.get("source", "")
         expected_claims = sample.get("claims", [])
 
-        print(f"\n--- Sample {idx + 1} (ID: {sample.get('id', 'N/A')}) ---")
-        print(f"Source: {comment[:100]}...")
+        # Header for the sample
+        console.print(
+            Panel(
+                f"[bold]Source Comment:[/bold]\n{comment}\n\n[dim]ID: {sample.get('id', 'N/A')}[/dim]",
+                title=f"Sample {idx + 1}/{len(samples)}",
+                border_style="blue",
+            )
+        )
 
         expected_count = len(sample.get("claims", []))
-        atoms, atomize_raw = atomize(
-            comment, atomize_template, expected_count, args.model
-        )
+
+        with console.status("[bold green]Atomizing comment...[/bold green]"):
+            atoms, atomize_raw = atomize(
+                comment, atomize_template, expected_count, args.model, args.verbose
+            )
+
         decont_outputs = []
         decont_raw_outputs = []
 
+        # Create a table for processing steps
+        table = Table(
+            title="Claim Processing", show_header=True, header_style="bold magenta"
+        )
+        table.add_column("Original Atom", style="cyan", width=30)
+        table.add_column("Context Strategy", style="dim", width=15)
+        table.add_column("Decontextualized Result", style="green")
+
         for atom in atoms:
-            decont, decont_raw = decontextualize(
-                article,
-                atom,
-                decontext_template,
-                keywords_template,
-                args.experimental,
-                args.model,
-            )
+            with console.status(
+                f"[bold green]Decontextualizing: {atom[:20]}...[/bold green]"
+            ):
+                decont, decont_raw, context_used = decontextualize(
+                    article,
+                    atom,
+                    decontext_template,
+                    keywords_template,
+                    args.experimental,
+                    args.model,
+                    args.verbose,
+                )
             decont_outputs.append(decont)
             decont_raw_outputs.append(decont_raw)
-            print(f"DECONT: {decont}")
+            table.add_row(atom, context_used, decont)
 
-        print("Expected Claims:")
+        console.print(table)
+
+        # Expected Claims Display
+        exp_table = Table(title="Expected Ground Truth", show_header=False, box=None)
+        exp_table.add_column("Claim", style="italic")
         for claim in expected_claims:
-            print(f"EXPECTED: {claim}")
+            exp_table.add_row(f"✓ {claim}")
+        console.print(exp_table)
 
         judge_res = None
+        judge_score = "N/A"
+        judge_explanation = ""
+
         if args.judge:
-            print("\nRunning Judge Assessment...")
-            judge_res = judge_output(
-                comment,
-                article,
-                decont_outputs,
-                expected_claims,
-                judge_template,
-                args.model,
+            with console.status(
+                "[bold yellow]Running Judge Assessment...[/bold yellow]"
+            ):
+                judge_res = judge_output(
+                    comment,
+                    article,
+                    decont_outputs,
+                    expected_claims,
+                    judge_template,
+                    args.model,
+                    args.verbose,
+                )
+
+            judge_score, judge_explanation = parse_judge_result(judge_res)
+
+            # Formatting Judge Output
+            score_color = (
+                "green" if judge_score.isdigit() and int(judge_score) >= 7 else "red"
             )
-            print(f"JUDGE:\n{judge_res}")
+
+            judge_panel = Panel(
+                f"[bold]Explanation:[/bold]\n{judge_explanation}",
+                title=f"Judge Assessment - Score: [{score_color}]{judge_score}/10[/{score_color}]",
+                border_style="yellow",
+            )
+            console.print(judge_panel)
 
         results.append(
             {
@@ -264,6 +377,7 @@ def main():
                 "decont_raw_outputs": decont_raw_outputs,
                 "expected_claims": expected_claims,
                 "judge_evaluation": judge_res,
+                "judge_score": judge_score,
                 "model": args.model,
             }
         )
@@ -285,7 +399,9 @@ def main():
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(existing_results, f, indent=2, ensure_ascii=False)
 
-    print(f"\nProcessed {len(samples)} samples. Results appended to {output_file}")
+    console.print(
+        f"\n[bold green]Processed {len(samples)} samples. Results appended to {output_file}[/bold green]"
+    )
 
 
 if __name__ == "__main__":
